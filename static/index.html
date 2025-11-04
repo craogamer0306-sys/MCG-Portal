@@ -1,0 +1,41 @@
+﻿<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MCG Attendance Portal</title>
+<style>body{font-family:ui-sans-serif,system-ui,Segoe UI,Arial;margin:24px;max-width:720px}
+.card{border:1px solid #ddd;border-radius:12px;padding:20px;margin:12px 0}
+input,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid #ccc}
+button{padding:10px 14px;border-radius:10px;border:0;cursor:pointer}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.muted{color:#666;font-size:12px}</style></head>
+<body>
+<h1>MCG Attendance Portal</h1>
+<div class="card" id="auth"><h3>Login</h3>
+<input id="email" placeholder="email" /><input id="password" placeholder="password" type="password" />
+<button onclick="login()">Login</button><div class="muted" id="authMsg"></div></div>
+<div class="card" id="pw" style="display:none"><h3>Change Password</h3>
+<input id="oldpw" type="password" placeholder="old password" />
+<input id="newpw" type="password" placeholder="new password" />
+<button onclick="changePw()">Update</button><div class="muted" id="pwMsg"></div></div>
+<div class="card" id="att" style="display:none"><h3>Attendance</h3>
+<div class="row"><button onclick="attendance('CHECKIN')">Check In</button><button onclick="attendance('CHECKOUT')">Check Out</button></div>
+<div class="muted" id="attMsg"></div></div>
+<div class="card" id="task" style="display:none"><h3>Submit Daily Task</h3>
+<input id="title" placeholder="Task Title" />
+<textarea id="desc" rows="5" placeholder="What did you do today?"></textarea>
+<button onclick="submitTask()">Submit Task</button><div class="muted" id="taskMsg"></div></div>
+<script>
+let token=null;
+function setAuthState(on){['pw','att','task'].forEach(id=>document.getElementById(id).style.display=on?'block':'none')}
+async function login(){const email=document.getElementById('email').value.trim(),password=document.getElementById('password').value;
+ const r=await fetch('/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+ const j=await r.json(); document.getElementById('authMsg').textContent=j.ok?`Welcome ${j.full_name}`:(j.detail||'Login failed'); if(j.ok){token=j.token; setAuthState(true);}}
+async function geo(){return new Promise((res,rej)=>{navigator.geolocation.getCurrentPosition(p=>res({lat:p.coords.latitude,lon:p.coords.longitude}),e=>rej(e),{enableHighAccuracy:true,timeout:10000})})}
+async function attendance(action){document.getElementById('attMsg').textContent='Getting location...';
+ try{const {lat,lon}=await geo(); const r=await fetch('/attendance',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({lat,lon,action})});
+ const j=await r.json(); document.getElementById('attMsg').textContent=j.ok?`Marked ${action} at ${j.branch} (${Math.round(j.distance_m)}m)`: (j.detail||'Failed');}
+ catch(e){document.getElementById('attMsg').textContent='Location error. Allow GPS.';}}
+async function submitTask(){const title=document.getElementById('title').value.trim(),description=document.getElementById('desc').value.trim();
+ const r=await fetch('/tasks',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({title,description})});
+ const j=await r.json(); document.getElementById('taskMsg').textContent=j.ok?`Task saved (#${j.task_id})`:(j.detail||'Failed');}
+async function changePw(){const old_password=document.getElementById('oldpw').value,new_password=document.getElementById('newpw').value;
+ const r=await fetch('/auth/change-password',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({old_password,new_password})});
+ const j=await r.json(); document.getElementById('pwMsg').textContent=j.ok?'Password updated':(j.detail||'Failed');}
+</script></body></html>

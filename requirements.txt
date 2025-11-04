@@ -1,0 +1,10 @@
+﻿fastapi==0.115.4
+uvicorn==0.32.0
+python-dotenv==1.0.1
+SQLAlchemy==2.0.36
+psycopg[binary]==3.2.12
+bcrypt==4.2.1
+passlib==1.7.4
+PyJWT==2.9.0
+pydantic==2.9.2
+requests==2.32.3
