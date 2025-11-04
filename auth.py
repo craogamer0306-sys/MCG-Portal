@@ -2,7 +2,7 @@
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from passlib.context import CryptContext
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from db import get_db
 from models import User
@@ -13,10 +13,10 @@ JWT_SECRET = os.getenv("JWT_SECRET", "devsecret")
 JWT_EXPIRE_MIN = int(os.getenv("JWT_EXPIRE_MINUTES", "720"))
 
 class RegisterIn(BaseModel):
-    full_name: str; email: EmailStr; password: str; role: str = "EMP"
+    full_name: str; email: str; password: str; role: str = "EMP"
 
 class LoginIn(BaseModel):
-    email: EmailStr; password: str
+    email: str; password: str
 
 class ChangePwIn(BaseModel):
     old_password: str; new_password: str
@@ -66,3 +66,4 @@ def change_pw(payload: ChangePwIn, db: Session = Depends(get_db), me: User = Dep
     me.password_hash = pwd.hash(payload.new_password)
     db.commit()
     return {"ok": True}
+
